@@ -1,0 +1,362 @@
+#include <iostream>
+#include<stdlib.h>
+#include<chrono>
+#include<random>
+using namespace std;
+
+enum TCell : char
+	{
+		CROSS = 'X',
+		ZERO = '0',
+		EMPTY = '_'
+
+
+
+	};
+	
+	
+	enum Tprogress 
+	{
+		IN_PROGRESS,
+		HIMAN_WON,
+		AI_WON,
+		DRAW
+		
+	};
+	struct Tcord
+	{
+		size_t y{ 0U };
+		size_t x{ 0U };
+
+
+
+	};
+#pragma pack(push,1)
+	struct TGAME
+	{
+		const size_t SIZE{ 3U };
+		TCell** ppField{ nullptr };
+		Tprogress progress{ IN_PROGRESS };
+		TCell human, ai;
+		size_t turn{ 0U };
+	};
+#pragma pack(pop)
+	
+	inline void clearScr()
+	{
+		system("cls");// виндовс
+
+	}
+	int32_t __fastcall getRandomNum(int32_t min, int32_t max)
+	{
+		
+	const static auto seed = chrono::system_clock::now().time_since_epoch().count();
+	static mt19937_64 generator(seed);
+	uniform_int_distribution <int32_t> dis(min, max);
+	return dis(generator);
+		
+	}
+	
+	void __fastcall initGame(TGAME& g)
+	{
+		g.ppField = new TCell * [g.SIZE];// СТОЛБЕЦ УКАЗАТЕЛЕЙ
+		for (size_t i = 0; i < g.SIZE; i++)
+		{
+			g.ppField[i] = new TCell[g.SIZE];// столбец матрицы
+		}
+		
+		
+		for (size_t y = 0; y < g.SIZE; y++)
+		{
+			for (size_t x = 0; x < g.SIZE; x++)
+			{
+				g.ppField[y][x] = EMPTY;
+
+			}
+		}
+
+		
+		if (getRandomNum(0, 1000) > 500) //ход игрока
+		{
+			// ход человека
+			g.human = CROSS;
+			g.ai = ZERO;
+			g.turn = 0;
+
+		}
+		else //ход бота
+		{
+			g.human = ZERO;
+			g.ai = CROSS;
+			g.turn = 1;
+		}
+
+	}
+	void DeinitGame(TGAME& g)
+	{
+		for (size_t i = 0; i < g.SIZE; i++)
+
+		{
+			delete[] g.ppField[i];
+
+
+		}
+		delete[] g.ppField;
+		g.ppField = nullptr;
+	}
+	
+	void __fastcall PrintGame(const TGAME& g)
+	
+	{
+		cout << "    ";
+		for (size_t x = 0; x < g.SIZE; x++)
+		{
+			cout << x + 1 << "   ";
+		}
+		cout << endl;
+		
+		for (size_t y = 0; y < g.SIZE; y++)
+		{
+			cout << y + 1 << " | ";
+			for (size_t x = 0; x < g.SIZE; x++)
+			{
+			cout <<	g.ppField[y][x] << " | ";
+		
+			}
+			cout << endl;
+
+		}
+	
+		cout << endl << " player " << g.human << endl << " bot " << g.ai << endl;
+	
+	}
+	
+	void __fastcall congrats(const TGAME& g)
+	{
+		if (g.progress == HIMAN_WON)
+			cout << "PLAYER_WIN" << endl;
+		else if (g.progress== AI_WON)
+		cout <<"BOT_WIN" << endl;
+		else if(g.progress == DRAW)
+			cout << "DRAW" << endl;
+	}
+	
+	Tcord __fastcall gePLAYERCoord(TGAME& g)
+	{
+		Tcord c;
+		do {
+			cout << "ENTER X(1...3): ";
+			cin >> c.x;
+			cout << "ENTER Y(1...3): ";
+			cin >> c.y;
+			c.x--;
+			c.y--;
+
+		} while (c.x > 2 || c.y > 2 || g.ppField[c.y][c.x] != EMPTY);
+		return c;
+	}
+
+	Tprogress __fastcall getWon(TGAME& g)
+	{
+		//анализ победы строки
+		for (size_t y = 0; y < g.SIZE; y++)
+		{
+			if (g.ppField[y][0] == g.ppField[y][1] && g.ppField[y][0] == g.ppField[y][2])
+			{
+				if (g.ppField[y][0] == g.human)
+					return HIMAN_WON;
+			
+				if (g.ppField[y][0] == g.ai)
+					return AI_WON;
+			}
+		}
+		//столбцы
+		for (size_t x = 0; x < g.SIZE; x++)
+		{
+			if (g.ppField[0][x] == g.ppField[1][x] && g.ppField[0][x] == g.ppField[2][x])
+			{
+				if (g.ppField[0][x] == g.human)
+					return HIMAN_WON;
+
+				if (g.ppField[0][x] == g.ai)
+					return AI_WON;
+
+			}
+		}
+			//анализ диагоналей
+		if (g.ppField[0][0] == g.ppField[1][1] && g.ppField[0][0] == g.ppField[2][2])
+		{
+			if (g.ppField[1][1] == g.human);
+				return HIMAN_WON;	
+			
+				if (g.ppField[1][1] == g.ai)
+				return AI_WON;
+			
+		}
+		if (g.ppField[2][0] == g.ppField[1][1] && g.ppField[1][1] == g.ppField[0][2])
+		{
+			if (g.ppField[1][1] == g.human)
+				return HIMAN_WON;			
+			
+			if (g.ppField[1][1] == g.ai)		
+				return AI_WON;
+			
+		}
+			//ничья
+			bool draw{ true };
+			for (size_t y = 0; y < g.SIZE; y++)
+			{
+				for (size_t x = 0; x < g.SIZE; x++)
+				{
+					if (g.ppField[y][x] == EMPTY)
+					{
+						draw = false;
+						break;
+					}
+
+				}
+				if (!draw)
+					break;
+
+			}
+			if (draw)
+				return DRAW;
+			
+			return IN_PROGRESS;
+		
+	}
+	Tcord __fastcall geBotCoord(TGAME& g)
+	{
+		for (size_t y = 0; y < g.SIZE; y++)
+		{
+			for (size_t x = 0; x < g.SIZE; x++)
+			{
+				if (g.ppField[y][x] == EMPTY)
+				{
+					g.ppField[y][x] = g.ai;
+					if (getWon(g) == AI_WON);
+					{
+						g.ppField[y][x] = EMPTY;
+						return{ y,x };
+					}
+					g.ppField[y][x] = EMPTY;
+				}
+
+			}
+
+		}
+		for (size_t y = 0; y < g.SIZE; y++)
+		{
+			for (size_t x = 0; x < g.SIZE; x++)
+			{
+				if (g.ppField[y][x] == EMPTY)
+				{
+					g.ppField[y][x] = g.human;
+					if (getWon(g) == HIMAN_WON);
+					{
+						g.ppField[y][x] = EMPTY;
+						return{ y,x };
+					}
+					g.ppField[y][x] = EMPTY;
+				}
+
+			}
+
+		}
+				
+				if (g.ppField[1][1] == EMPTY)
+			return{ 1,1 };
+
+		Tcord buf[4];
+		
+		size_t num{ 0U };
+			
+			if (g.ppField[0][0] == EMPTY)
+			{
+				buf[num] = { 0,0 };
+				num++;
+			}
+			if (g.ppField[2][2] == EMPTY)
+			{
+				buf[num] = { 2,2 };
+				num++;
+			}
+			if (g.ppField[0][2] == EMPTY)
+			{
+				buf[num] = { 0,2 };
+				num++;
+			}
+			if (g.ppField[2][0] == EMPTY)
+			{
+				buf[num] = { 2,0 };
+				num++;
+			}
+
+			if (num > 0)
+			{
+				const size_t index = getRandomNum(0, 1000) % num;//выбор угла
+				return buf[index];
+			}
+		
+			//не углы
+			if (g.ppField[0][1] == EMPTY)
+			{
+				buf[num] = { 0,1 };
+				num++;
+			}
+			if (g.ppField[1][0] == EMPTY)
+			{
+				buf[num] = { 1,0 };
+				num++;
+			}
+			if (g.ppField[1][2] == EMPTY)
+			{
+				buf[num] = { 1,2 };
+				num++;
+			}
+			if (g.ppField[2][1] == EMPTY)
+			{
+				buf[num] = { 2,1 };
+				num++;
+			}
+
+			if (num > 0)
+			{
+				const size_t index = getRandomNum(0, 1000) % num;
+				return buf[index];
+			}
+		
+			
+		
+			}
+		
+		
+		int main()
+		{
+
+			TGAME g;
+			initGame(g);
+			clearScr();
+			PrintGame(g);
+			do {
+				if (g.turn % 2 == 0)
+				{
+					Tcord c = gePLAYERCoord(g);
+					g.ppField[c.y][c.x] = g.human;
+
+				}
+				else
+				{
+					Tcord c = geBotCoord(g);
+					g.ppField[c.y][c.x] = g.ai;
+				}
+				clearScr();
+				PrintGame(g);
+				g.turn++;
+				g.progress = getWon(g); // поверка на победу
+			} 
+			while (g.progress == IN_PROGRESS);
+			congrats(g);
+			DeinitGame(g);
+			return 0;
+		}

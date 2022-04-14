@@ -240,6 +240,7 @@ enum TCell : char
 						return{ y,x };
 					}
 					g.ppField[y][x] = EMPTY;
+					return{ y,x };
 				}
 
 			}
@@ -258,6 +259,7 @@ enum TCell : char
 						return{ y,x };
 					}
 					g.ppField[y][x] = EMPTY;
+					return{ y,x };
 				}
 
 			}
